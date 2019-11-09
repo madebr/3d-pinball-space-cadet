@@ -1,0 +1,82 @@
+set(SDL2_SEARCH_PATH
+	~/Library/Frameworks
+	/Library/Frameworks
+	/usr/local
+	/usr
+	/sw
+	/opt/local
+	/opt/csw
+	/opt
+	${SDL2_ROOT_DIR})
+
+find_path(SDL2_INCLUDE_DIR SDL.h
+	PATHS ${SDL2_SEARCH_PATH} ENV SDL2_ROOT_DIR
+	PATH_SUFFIXES SDL2 include/SDL2 include
+	DOC "SDL2 include directory")
+
+find_library(SDL2_SHARED_LIBRARY_PATH
+	NAMES SDL2
+	PATH_SUFFIXES lib64 lib
+	PATHS ${SDL2_SEARCH_PATH} ENV SDL2_ROOT_DIR
+	DOC "SDL2 shared library")
+
+find_library(SDL2_STATIC_LIBRARY_PATH
+	NAMES libSDL2.lib libSDL2.a SDL2.lib SDL2.a
+	PATH_SUFFIXES lib64 lib
+	PATHS ${SDL2_SEARCH_PATH} ENV SDL2_ROOT_DIR
+	DOC "SDL2 static library")
+
+if(SDL2_STATIC)
+	set(SDL2_LIBRARY_PATH ${SDL2_STATIC_LIBRARY_PATH})
+else()
+	set(SDL2_LIBRARY_PATH ${SDL2_SHARED_LIBRARY_PATH})
+endif()
+
+if(SDL2_INCLUDE_DIR AND NOT SDL2_VERSION)
+	file(READ "${SDL2_INCLUDE_DIR}/SDL_version.h" _SDL_VERSION_H)
+	set(SDL2_REGEXES
+		"SDL_MAJOR_VERSION[ ]+([0-9]+)"
+		"SDL_MINOR_VERSION[ ]+([0-9]+)"
+		"SDL_PATCHLEVEL[ ]+([0-9]+)"
+		)
+	set(_SDL2_VERSION)
+	foreach(_SDL2_REGEX ${SDL2_REGEXES})
+		string(REGEX MATCH "${_SDL2_REGEX}" _SDL2_NUMBER "${_SDL_VERSION_H}")
+		if(NOT _SDL2_NUMBER)
+			message(AUTHOR_WARNING "Cannot detect SDL2 version: regex \"${_SDL2_REGEX}\" does not match")
+		endif()
+		list(APPEND _SDL2_VERSION "${CMAKE_MATCH_1}")
+	endforeach()
+	string(REPLACE ";" "." SDL2_VERSION "${_SDL2_VERSION}")
+	set(SDL2_VERSION "${SDL2_VERSION}" CACHE STRING "Version of SDL2")
+endif()
+
+if(NOT APPLE)
+	find_package(Threads REQUIRED)
+	list(APPEND SDL2_DEPENDENCIES Threads::Threads)
+endif()
+if(APPLE)
+	list(APPEND SDL2_ADDITIONAL_LIBRARIES "-framework Cocoa")
+endif()
+if(MINGW)
+	list(APPEND SDL2_ADDITIONAL_LIBRARIES mingw32)
+endif()
+if(WIN32)
+	list(APPEND SDL2_ADDITIONAL_LIBRARIES winmm imm32 version msimg32)
+endif()
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(SDL2
+	FOUND_VAR SDL2_FOUND
+	REQUIRED_VARS SDL2_LIBRARY_PATH SDL2_INCLUDE_DIR
+	VERSION_VAR SDL2_VERSION)
+
+mark_as_advanced(SDL2_LIBRARY_PATH SDL2_INCLUDE_DIR SDL2_VERSION)
+
+if(SDL2_FOUND AND NOT TARGET SDL2::SDL2)
+	add_library(SDL2::SDL2 INTERFACE IMPORTED)
+	set_property(TARGET SDL2::SDL2
+		PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${SDL2_INCLUDE_DIR})
+	set_property(TARGET SDL2::SDL2
+		PROPERTY INTERFACE_LINK_LIBRARIES ${SDL2_LIBRARY_PATH} ${SDL2_ADDITIONAL_LIBRARIES})
+endif()

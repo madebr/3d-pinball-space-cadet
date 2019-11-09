@@ -1,0 +1,26 @@
+if(MSVC)
+	set(_directx_winsdk ON)
+else()
+	set(_directx_winsdk OFF)
+endif()
+option(DIRECTX_USE_WINSDK "Use DirectX SDK of Windows SDK" ${_directx_winsdk})
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(DirectX_HOST_ARCHITECTURE x64)
+else()
+	set(DirectX_HOST_ARCHITECTURE x86)
+endif()
+
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86")
+	set(DirectX_BUILD_ARCHITECTURE "x86")
+else()
+	set(DirectX_BUILD_ARCHITECTURE "x64")
+endif()
+
+set(DirectX_INCLUDE_DIR "" CACHE FILEPATH "Include path of DirectX")
+
+if(DIRECTX_USE_WINSDK)
+else()
+	find_package(DirectXSDK REQUIRED)
+	set(DirectX_INCLUDE_DIR "${DirectXSDK_INCLUDE_DIR}")
+endif()
