@@ -3,8 +3,8 @@
 //
 
 #include "Classes/classes.h"
-#include <SDL.h>
-#include <d3d.h>
+#include "SDL.h"
+#include <d3d9.h>
 
 #ifdef _WIN32
 #include <CommCtrl.h>
@@ -1198,4 +1198,3 @@ int __onexitbegin; // weak
 int _adjust_fdiv; // weak
 
 #endif //PINBALL_PINBALL_H
- 
